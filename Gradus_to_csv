@@ -1,0 +1,44 @@
+using Gradus, Plots, DelimitedFiles
+
+struct Schwarzschild{T} <: AbstractStaticAxisSymmetric{T}
+    M::T
+end
+
+function Gradus.metric_components(m::Schwarzschild, x)
+    r, θ = x
+    M = m.M
+
+    dt2 = -(1 - (2M / r))
+    dr2 = -inv(dt2)
+    dθ2 = r^2
+    dϕ2 = r^2 * sin(θ)^2
+    dtdϕ = zero(r)
+
+    SVector(dt2, dr2, dθ2, dϕ2, dtdϕ)
+end
+
+Gradus.inner_radius(m::Schwarzschild) = 2 * m.M
+
+println("Schwarzschild metric defined with mass M = 1.0")
+
+m = Schwarzschild(1.0)
+x0 = SVector(0.0, 1000.0, π/2, 0.0)
+v0 = SVector(0.0, -1.0, 0.0, -8e-6)
+
+λ_max = 2000.0
+sol = tracegeodesics(m, x0, v0, λ_max)
+
+plot_paths(sol)
+plot_horizon!(m)
+
+# save solution to CSV
+open("ray.csv", "w") do io
+    println(io, "ray_id,x,y,z")
+    for u in sol.u
+        r, θ, φ = u[2], u[3], u[4]
+        px = r * sin(θ) * cos(φ)
+        py = r * sin(θ) * sin(φ)
+        pz = r * cos(θ)
+        println(io, "1,$px,$py,$pz")
+    end
+end
