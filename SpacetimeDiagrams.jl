@@ -1,18 +1,24 @@
 using Gradus, Plots, OrdinaryDiffEq
 
 # METRIC
-m = KerrMetric(M = 1.0, a = 0.0)
+m = KerrMetric(M = 1.0, a = 0.9)
+
+# Changing definition of inner_radius to not throw and error when a is greater than 1.
+function Gradus.inner_radius(m::Gradus.KerrMetric{T}) where {T}
+    disc = m.M^2 - m.a^2 # Operand of the sqrt
+    disc < 0 ? 4eps(T) : m.M + √disc # "If sqrt operand is less than 0 then return as close to zero as possible but not zero
+end
 
 # INITIAL CONDITIONS
 θ = π/2  
-r0 = 8.0
+r0 = 4.0
 
 # LIGHT RAY ODE
 function lightray(u, p, t)
     metric, θ, direction = p
     r = u
     gtt, grr = Gradus.metric_components(metric, SVector(r, θ))
-    return direction * sqrt(-gtt / grr)
+    return direction * sqrt(-gtt / grr) # Condition for null-rays where the ST interval = 0
 end
 
 # SOLVING
@@ -63,5 +69,5 @@ for ray in (future_out, future_in, past_out, past_in)
 end
 
 println("All Working")
-vline!(p, [2M]; linestyle=:dash, color=:red, label=false)
+vline!(p, [Gradus.inner_radius(m)]; linestyle=:dash, color=:red, label=false)
 display(p)
