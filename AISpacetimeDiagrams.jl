@@ -1,21 +1,22 @@
 using Gradus, Plots, OrdinaryDiffEq
 
-# Equatorial null rays in Kerr Boyer-Lindquist coordinates.
-M = 1.0
-a = 0.9
-@assert abs(a) <= M "A Kerr black hole has an event horizon only when abs(a) <= M."
-m = KerrMetric(M=M, a=a)
+function Gradus.inner_radius(m::Gradus.KerrMetric{T}) where {T}
+    disc = m.M^2 - m.a^2 # Operand of the sqrt
+    disc < 0 ? 4eps(T) : m.M + √disc # "If sqrt operand is less than 0 then return as close to zero as possible but not zero
+end
 
+m = KerrMetric(M=1.0, a=1.2)
+
+# INITIAL CONDITIONS
 θ = π / 2
-r0 = 4.0
+r0 = 3.0
 t0 = 0.0
 Tmax = 10.0
 E = 1.0
-Lz = 0.0 # Zero axial angular momentum; frame dragging can still change phi.
-horizon = M + sqrt(M^2 - a^2)
+Lz = 0.0 
+horizon = Gradus.inner_radius(m)
 
-# The state is r and the independent variable is Boyer-Lindquist t.
-# Gradus returns (g_tt, g_rr, g_theta_theta, g_phi_phi, g_tphi).
+# SET UP ODE FUNCTION FOR NULL RAYS
 function lightray(r, p, t)
     metric, θ, energy, angular_momentum, radial_direction = p
     gtt, grr, _, gphiphi, gtphi =
@@ -42,8 +43,9 @@ function lightray(r, p, t)
     return dr_dλ / dt_dλ
 end
 
-function solve_ray(radial_direction, tspan)
-    parameters = (m, θ, E, Lz, radial_direction)
+# SOLVING THE ODE FOR EACH TIME DIRECTION
+function solve_ray(direction, tspan)
+    parameters = (m, θ, E, Lz, direction)
     problem = ODEProblem(lightray, r0, tspan, parameters)
     return solve(problem, Tsit5(); reltol=1e-10, abstol=1e-10)
 end
@@ -59,6 +61,7 @@ default(
 future_times = collect(range(t0, Tmax; length=400))
 past_times = collect(range(t0, -Tmax; length=400))
 
+# SOLVING FOR DIRECTION IN BOTH TIME AND SPACE
 future_out = solve_ray(1.0, (t0, Tmax))
 future_in = solve_ray(-1.0, (t0, Tmax))
 past_out = solve_ray(1.0, (t0, -Tmax))
@@ -67,7 +70,7 @@ past_in = solve_ray(-1.0, (t0, -Tmax))
 diagram = plot(
     xlabel="r",
     ylabel="t (Boyer-Lindquist coordinate time)",
-    title="Equatorial Kerr null rays (a/M = $(a / M), Lz/E = $(Lz / E))",
+    title="Minkowski Diagram of a Kerr Blackhole (a = $(a))",
 )
 
 # Shade the causal past and future in the equatorial, fixed-Lz radial slice.
