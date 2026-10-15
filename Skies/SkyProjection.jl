@@ -8,19 +8,20 @@ function Gradus.inner_radius(m::Gradus.KerrMetric{T}) where {T}
     disc < 0 ? 4eps(T) : m.M + √disc # "If sqrt operand is less than 0 then return as close to zero as possible but not zero
 end
 
+# INIT
 m = KerrMetric(1.0, 1.0)
-# the ring-corona can also be used to represent any off-axis point
 corona = RingCorona(; r = 3.0, h = 3.0)
 d = ThinDisc(0.0, Inf)
-
 sky = AdaptiveSky(m, corona, d)
-
 parameter_label(m, corona) =
     "Spin a = $(m.a) | Corona height h = $(corona.h) | Corona radius r = $(corona.r)"
 
 # trace an initial grid of points
 trace_initial!(sky)
 
+
+# FUNCTIONS
+# Plot
 function plot_sky(sky; kwargs...)
     phi, cos_theta, values = unpack_sky(sky)
     theta = acos.(cos_theta)
@@ -34,22 +35,7 @@ function plot_sky(sky; kwargs...)
     fig
 end
 
-function refine_edges(sky::AdaptiveSky, i1::Int, i2::Int)
-    v1 = sky.values[i1]
-    v2 = sky.values[i2]
-    if isnan(v1.r) && isnan(v2.r)
-        false # do not refine
-    else
-        isnan(v1.r) || isnan(v2.r)
-    end
-end
-
-trace_step!(sky; check_refine = refine_edges, verbose = true)
-
-for i in 1:2
-    trace_step!(sky; check_refine = refine_edges, verbose = true)
-end
-
+# Refine Function
 function refine_distant(sky::AdaptiveSky, i1::Int, i2::Int)
     v1 = sky.values[i1]
     v2 = sky.values[i2]
@@ -61,9 +47,7 @@ function refine_distant(sky::AdaptiveSky, i1::Int, i2::Int)
     end
 end
 
-# create a fresh sky
-sky = AdaptiveSky(m, corona, d)
-trace_initial!(sky)
+# Refining
 for i in 1:3
     trace_step!(sky; check_refine = refine_distant, verbose = true)
 end
@@ -85,6 +69,11 @@ Gradus.vector_average(
 phi, theta, grid = fill_sky_values(sky, 1080)
 Rs = [v.r for v in grid]
 
-p  = heatmap(phi, theta, log10.(Rs)')
-
+img = reshape(log10.(Rs), length(theta), length(phi))
+p = display(heatmap(phi, theta, log10.(Rs);
+xlabel = "ϕ", 
+ylabel = "θ",
+title = parameter_label(m, corona))
+)
+# TODO: Colour ray based on outcome, not leave as NaN
 display(p)
