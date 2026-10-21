@@ -24,8 +24,6 @@ function render_disc(a;
     m  = KerrMetric(M = 1.0, a = a)
     xo = SVector(0.0, 1000.0, deg2rad(θ), 0.0)
     isco = Gradus.isco(m)
-    @show a isco width height
-    isfinite(isco) || error("ISCO is not finite for a = $a")
     d  = ThinDisc(isco, 30.0)
 
     kw = (; αlims, βlims, image_width = width, image_height = height, verbose = true)
@@ -38,11 +36,6 @@ function render_disc(a;
     pf_r = PointFunction((m, gp, max_time; kwargs...) -> gp.x[2]) ∘
            ConstPointFunctions.filter_intersected()
     _, _, r_img = rendergeodesics(m, xo, d, 2000.0; pf = pf_r, kw...)
-
-    # diagnostics
-    @show extrema(filter(!isnan, g_img))
-    rr = filter(!isnan, r_img)
-    @show extrema(rr) quantile(rr, [0.01, 0.1, 0.5])
 
     # tone mapping from this call's own images
     g = replace(g_img, NaN => 0.0)
