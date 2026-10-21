@@ -6,7 +6,7 @@ end                                             #T is the number type of this me
 
 function Gradus.metric_components(m::Schwarzschild, x)     #implementation of metric. x only contains r and theta because it is static and axisymmetric, so we don't need to include t or phi in the metric components.
     r, theta = x
-    M = m.M
+    M = m.M   #
 
     dt2 = -(1 - (2M/r))
     dr2 = -inv(dt2)
@@ -27,7 +27,7 @@ Gradus.inner_radius(m::Schwarzschild) = 2 * m.M   #specifying inner radius for i
 
 m = Schwarzschild(1.0)
 x = SVector(0.0, 1000.0, pi/2, 0.0) #initial position of the photon in (t,r,theta,phi) coordinates
-v = SVector(1.0, -1.0, 0.0, -8e-6)
+v = SVector(1.0, -1.0, 0.0, -8e-5)
 
 lambda_max = 2000.0 #maximum affine parameter to integrate to
 sol = tracegeodesics(m, x, v, lambda_max) #trace the geodesics of the photon in the Scwarzschild spacetime
