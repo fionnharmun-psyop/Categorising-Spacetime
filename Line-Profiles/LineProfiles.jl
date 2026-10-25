@@ -86,5 +86,5 @@ E_line = 6.4
 vline!([E_line], color = :black, linestyle = :dashdot, label = "6.4KeV Emission Line")
 #plot!(sch_e, sch_f, label = "Schwarzschild")
 plot!(kerr_e, kerr_f, label = L"a = 0.998")
-plot!(skerr_e, skerr_f, label = L"a = 1.968")
+plot!(skerr_e, skerr_f, label = L"a = 1.05")
 display(p)
