@@ -49,9 +49,10 @@ skerr_bins, skerr_line = CalculateLineProfile(SuperKerr, x, Skerr_d; y = 4.0)
 
 # ADJUST UNITS OF LINE PROFILE TO MATCH M&I
 # Changes gravitational redshift and flux to observed energy and conventional normalised flux
+# The flux should match that in Mummery & Ingram (2024) Figure 9, i.e., E^2 dN_gamma/dE
 function UnitChange(g, F) 
     observed_energy = g .* 6.4
-    normalised_flux = g .* F ./ maximum(g.* F)
+    normalised_flux = g.^2 .* F ./ maximum(g.^2 .* F)
     return observed_energy, normalised_flux
 end
 
@@ -75,16 +76,16 @@ default(
 
 p = plot(; 
 title = "Line Profile of Different Metrics",
-xlabel = L"Photon Energy E, $KeV$",
-ylabel = "Normalised Flux",
+xlabel = "Photon Energy E (keV)",
+ylabel = L"Normalised Flux ($E^2\,\mathrm{d}N_{\gamma}/\mathrm{d}E$)",
 legend=:topright,
 ylims = (0.0, 1.2),
 xlims = (2.0, 11.0)
 )
 
 E_line = 6.4
-vline!([E_line], color = :black, linestyle = :dashdot, label = "6.4KeV Emission Line")
+vline!([E_line], color = :black, linestyle = :dashdot, label = "6.4 keV")
 #plot!(sch_e, sch_f, label = "Schwarzschild")
 plot!(kerr_e, kerr_f, label = L"a = 0.998")
-plot!(skerr_e, skerr_f, label = L"a = 1.968")
+plot!(skerr_e, skerr_f, label = L"a = 1.05")
 display(p)

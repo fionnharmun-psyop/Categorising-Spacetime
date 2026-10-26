@@ -26,16 +26,94 @@ Gradus.inner_radius(m::Schwarzschild) = 2 * m.M   #specifying inner radius for i
 # initial velocity arbitrarily set to v^r = -1 towards the singularity and v^phi very small so it grazes past the singularity.
 
 m = Schwarzschild(1.0)
-x = SVector(0.0, 1000.0, pi/2, 0.0) #initial position of the photon in (t,r,theta,phi) coordinates
-v = SVector(1.0, -1.0, 0.0, -8e-6)
-
+x = SVector(0.0, 1000.0, deg2rad(70), 0.0) #rotating the camera, or the x plane
 lambda_max = 2000.0 #maximum affine parameter to integrate to
-sol = tracegeodesics(m, x, v, lambda_max) #trace the geodesics of the photon in the Scwarzschild spacetime
 
-#plot the thing
+#IMPACT PARAMETERS
+
+# grid of impact parameters in horizontal direction
+# keeping β fixed at 0
+α = range(-10.0, 10.0, 30)
+vs = map_impact_parameters(m, x, α, 0.0)
+
+# need a position for each velocity vector
+xs = fill(x, size(vs))
+
+sols = tracegeodesics(m, xs, vs, lambda_max)
+
 using Plots
+p = plot_paths(sols, legend=false)
+plot_horizon!(m, color = :black)
 
-plot_paths(sol)
-plot_horizon!(m)
+#time based imaging
+α = range(-10.0, 10.0,100) #100x100 matrix of velocity vectors
+β = range(-10.0, 10.0,100)
+#flatten object using vec
+vs = vec([map_impact_parameters(m, x, a, b) for a in α, b in β])
+xs = fill(x, size(vs))
+
+#trace geodesics
+sols = tracegeodesics(m, xs, vs, lambda_max, save_on = false)
+
+points = unpack_solution.(sols.u)
+points =  reshape(points ,(100,100))
+
+times = map(points) do gp
+    if gp.status == StatusCodes.WithinInnerBoundary
+        gp.x[1]
+    else
+        NaN
+    end
+end
+
+heatmap(α, β, times, xlabel = "α", ylabel = "β", colorbar_title = "Time to reach horizon", title = "Time to reach horizon for different impact parameters", aspect_ratio = 1)
+
+time_coord = PointFunction((m, gp, lambda) -> gp.x[1])
+filter_event_horizon = FilterStatusCode(StatusCodes.WithinInnerBoundary)
+pf_geometry = time_coord ∘ ConstPointFunctions.filter_intersected()
+times = pf_geometry.(m, points, lambda_max)
+
+#adding an accretion disk to the image
+#define cross section of accretion disk
+function cross_section(x)
+    center = 8
+    radius = 3
+
+    if (x < center - radius) || (x > center + radius)
+        zero(x)
+    else
+        r = x - center
+        sqrt(radius^2 - r^2) + (0.5sin(3x))
+    end
+end
+
+#lessavalook
+sample = collect(range(0.0,20.0,300))
+y = cross_section.(sample)
+
+#plot(sample, y, xlabel = "r", ylabel = "height", aspect_ratio = 1)
+
+d = ThickDisc(r -> cross_section(r))
 
 
+# this function returns the impact parameter axes
+
+x = SVector(0.0, 1000.0, deg2rad(40), 0.0) #rotating the camera, or the x plane
+α, β, image = rendergeodesics(
+    m,
+    x,
+    d,
+    # no longer need to specify the velocities
+    # these are automatically calculated
+    lambda_max,
+    pf = pf_geometry,
+    # image parameters
+    image_width = 1200,
+    image_height = 800,
+    # the "zoom" -- use the impact parameter axes
+    αlims = (-20, 20),
+    βlims = (-15, 15),
+    verbose = true
+)
+
+heatmap(α, β, image, aspect_ratio = 1)
