@@ -1,0 +1,49 @@
+using Gradus
+using Plots
+# DEFINE METRICS
+m =  KerrMetric(a=0.998)
+# Observer location in Boyer-Lindquist coordinates
+x = SVector((0.0, 1e5, deg2rad(60), 0.0))
+# Accretion disc, setting inner and outer radii
+d = ThinDisc(0.0, Inf)
+# Coronal geometry
+model = LampPostModel(h = 10.0)
+
+# Compute a lineprofile with the default power-law emissivity profile
+g, flux1 = lineprofile(m, x, d)
+
+# Compute an emissivity profile for the lamppost
+profile = emissivity_profile(m, d, model; n_samples = 50_000)
+
+# Pre-compute the Cunningham transfer functions
+tfs = transferfunctions(m, x, d; verbose = true)
+# Use them to integrate a lineprofile with lamppost emissivity
+flux2 = integrate_lineprofile(profile, tfs, g)
+
+# Plot the lineprofiles
+plot(g, flux1, label = "Power-law")
+plot!(g, flux2, label = "Lamppost")
+
+# Visualise the emissivity profile
+plot(profile.radii, profile.ε, xscale = :log10, yscale = :log10)
+
+# Corona to observer time
+t0 = continuum_time(m, x, model)
+
+# Set up grid for reverberation transfer functions
+gbins = collect(range(0.0, 1.4, 500))
+tbins = collect(range(0, 150.0, 500))
+
+# Integrate the time-dependent Cunningham transfer functions
+reverb_flux = Gradus.integrate_lagtransfer(
+    profile, 
+    tfs, 
+    gbins, 
+    tbins; 
+    t0 = t0, 
+    n_radii = 3000, 
+    g_grid_upscale = 3, 
+)
+
+# Visualise reverberation transfer function
+heatmap(tbins, gbins, log10.(abs.(reverb_flux)))
