@@ -57,9 +57,9 @@ function DoLineProfile(spin, emissivity, angle, resolution)
 
     # Enumerating plotting of each spin for each emissivity
     for (a_index, a) in enumerate(spin)
-        plot!(p, [NaN], [NaN]; color = :black, linestyle = styles[a_index], label = L"a = %$a")
+        
+        
         for (y_index, y) in enumerate(emissivity)
-    
             metric = KerrMetric(M=1.0, a = a)
             @info "Computing" a y
             shift, flux = lineprofile(
@@ -80,11 +80,12 @@ function DoLineProfile(spin, emissivity, angle, resolution)
             plot!(
                 p, E, F, 
                 color = colors[y_index], 
-                linestyle = styles[a_index], linewidth = 1.5,
+                linestyle = styles[a_index], linewidth = 2.0,
                 label = a_index == 1 ? L"\gamma = %$y" : "",
             )
-
+            
         end
+        plot!(p, [NaN], [NaN]; color = :black, linestyle = styles[a_index], label = L"a = %$a")
     end
 
      filename = "LineProfile_spin-$(join(spin, "-"))" * "_emissivity-$(join(emissivity, "-"))" * "_angle-$(angle)_resolution-$(resolution).png"
@@ -95,4 +96,4 @@ end
 
 # TODO: Make sure Units are right and congruent with Andy's update
 
-DoLineProfile([0.998, 1.002] , [3,4,5,6,7] , 75.0 , :low)
+DoLineProfile([0.998, 1.002] , [3,4,5,6,7] , 75.0 , :high)
