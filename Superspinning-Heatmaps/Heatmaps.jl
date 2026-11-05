@@ -5,12 +5,12 @@ function Gradus.inner_radius(m::Gradus.KerrMetric{T}) where {T}
     disc < 0 ? 4eps(T) : m.M + √disc
 end
 
-function RenderPlot(a, size, angle; color_limits = :auto, color = :auto)
+function RenderPlot(a, size, angle; color_limits = (0.6, 1.2), color = :auto)
 
     m = KerrMetric(M = 1.0, a = a)
     x = SVector(0.0, 1000.0, angle, 0.0)
     isco = Gradus.isco(m)
-    d = ThinDisc(isco, 100.0)
+    d = ThinDisc(0.0, isco)
     pf = ConstPointFunctions.redshift(m, x) ∘ ConstPointFunctions.filter_intersected()
 
     αlims = (-10, 10)
@@ -42,13 +42,10 @@ function RenderPlot(a, size, angle; color_limits = :auto, color = :auto)
     )
 
     display(p)
-    savefig(p, "RedshiftMap_a$(a)_i$(round(Int, rad2deg(angle)))_zoom.png")
+    #savefig(p, "RedshiftMap_a$(a)_i$(round(Int, rad2deg(angle)))_zoom.png")
 end
 
 
 
-RenderPlot(1.002, 2400, deg2rad(60))
-RenderPlot(1.986, 2400, deg2rad(60))
-RenderPlot(1.986, 2400, deg2rad(5))
-RenderPlot(1.986, 2400, deg2rad(80))
-RenderPlot(1.002, 2400, deg2rad(80))
+RenderPlot(1.002, 800, deg2rad(60))
+RenderPlot(0.998, 800, deg2rad(60))
