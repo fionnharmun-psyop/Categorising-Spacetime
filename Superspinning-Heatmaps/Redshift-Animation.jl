@@ -1,5 +1,5 @@
 using Gradus, Plots
-include("common.jl")
+include(joinpath(@__DIR__, "..", "common.jl"))
 
 function RenderPlot(a, size, angle; color_limits = (0.3, 1.3), color = :inferno, αlims = (-5, 5), βlims = (-5, 5))
 

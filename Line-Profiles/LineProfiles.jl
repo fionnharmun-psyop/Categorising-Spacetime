@@ -17,18 +17,19 @@ x = SVector(0.0, 10_000.0, deg2rad(60.0), 0.0)
 #bins  = collect(range(0.1, 1.7, length = 200))       
 #plane = PolarPlane(GeometricGrid(); Nr = 800, Nθ = 1600, r_max = 45.0)
 # High Res (3 mins per plot)
-bins  = collect(range(0.1, 1.7, length = 300))                     
-plane = PolarPlane(GeometricGrid(); Nr = 1600, Nθ = 3200, r_max = 45.0)
+#bins  = collect(range(0.1, 1.7, length = 300))                     
+#plane = PolarPlane(GeometricGrid(); Nr = 1600, Nθ = 3200, r_max = 45.0)
 # Low Res (7 secs per plot)
-#bins  = collect(range(0.1, 1.7, length = 100))                     
-# plane = PolarPlane(GeometricGrid(); Nr = 300, Nθ = 700, r_max 
-function CalculateLineProfile(metric, pos, disc; bins = bins, y = 4.0 , kwargs...)
+bins  = collect(range(0.1, 1.7, length = 100))                     
+plane = PolarPlane(GeometricGrid(); Nr = 300, Nθ = 700, r_max = 30.0)
+function CalculateLineProfile(metric, pos, disc, model; bins = bins, kwargs...)
+    profile = emissivity_profile(metric, disc, model)   # ray trace corona -> disc to get ε(r)
     return lineprofile(
-        bins,                    
-        r -> r^(-y),             # emissivity function (can be replaced with a disc emissivity model)
         metric,
         pos,
-        disc;
+        disc,
+        profile;
+        bins = bins,
         verbose = true,
         method = BinningMethod(),
         plane = plane,
