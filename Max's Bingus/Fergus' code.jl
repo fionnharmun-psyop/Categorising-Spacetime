@@ -3,7 +3,7 @@ using Plots
 # DEFINE METRICS
 m =  KerrMetric(a=0.998)
 # Observer location in Boyer-Lindquist coordinates
-x = SVector((0.0, 1e5, deg2rad(60), 0.0))
+x = SVector((0.0, 1e4, deg2rad(60), 0.0))
 # Accretion disc, setting inner and outer radii
 d = ThinDisc(0.0, Inf)
 # Coronal geometry
@@ -16,7 +16,7 @@ g, flux1 = lineprofile(m, x, d)
 profile = emissivity_profile(m, d, model; n_samples = 50_000)
 
 # Pre-compute the Cunningham transfer functions
-tfs = transferfunctions(m, x, d; verbose = true)
+tfs = transferfunctions(m, x, d; verbose = true);
 # Use them to integrate a lineprofile with lamppost emissivity
 flux2 = integrate_lineprofile(profile, tfs, g)
 

@@ -45,7 +45,7 @@ Skerr_d = ThinDisc(0.0, Inf)
 
 # CALCULATE THE LINE PROFILES
 #sch_bins, sch_line = CalculateLineProfile(Sch, x, sch_d; bins = bins)
-kerr_bins, kerr_line = CalculateLineProfile(Kerr, x, kerr_d; y = 4.0)
+kerr_bins, kerr_line = CalculateLineProfile(Kerr, x, kerr_d; y = 4.0)[]
 skerr_bins, skerr_line = CalculateLineProfile(SuperKerr, x, Skerr_d; y = 4.0)
 
 # ADJUST UNITS OF LINE PROFILE TO MATCH M&I
