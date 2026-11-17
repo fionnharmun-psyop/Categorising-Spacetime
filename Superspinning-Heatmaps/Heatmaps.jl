@@ -47,5 +47,4 @@ end
 
 
 
-RenderPlot(1.002, 800, deg2rad(60))
-RenderPlot(0.998, 800, deg2rad(60))
+RenderPlot(1.002, 300, deg2rad(60))

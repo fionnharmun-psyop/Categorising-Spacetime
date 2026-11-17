@@ -1,5 +1,5 @@
 using Gradus, Plots, LaTeXStrings
-include("common.jl")
+include(joinpath(@__DIR__, "..", "common.jl"))
 
 const E_LINE = 6.4 # Rest-frame iron line energy (keV)
 
@@ -41,6 +41,7 @@ function RenderDisc(spin, position::SVector{4,T}, emissivity_index, size; r_out 
     end
 
     redshift[.!valid] .= NaN
+    radius[.!valid] .= NaN
     return (; α, β, redshift, radius, flux, image_height)
 end
 
@@ -126,14 +127,14 @@ function WhereProfile(spin, position::SVector{4,T}, emissivity_index, size;
    oversample = 2 # output pixels per traced ray; >1 doesn't add disc detail but keeps contour lines and text crisp
    ) where {T}
 
-
-    (; α, β, redshift, image_height) = RenderDisc(spin, position, emissivity_index, size; 
-    αlims = αlims, βlims = βlims
-    )
+    # the (; ...) phrase allows is shorthand for (a = a, b = b), basically extracting desired returns from RenderDisc
+    (; α, β, redshift, image_height, radius) = RenderDisc(spin, position, emissivity_index, size; αlims = αlims, βlims = βlims)
 
     # Plotting observed energy on disc render and profile
     E_img = E_LINE .* redshift
     E_min, E_max = extrema(filter(isfinite, E_img))
+    R_img = log10.(radius)
+    R_min, R_max = extrema(filter(isfinite, R_img))
     
     if spec_energies !== nothing
         energies = spec_energies
@@ -142,7 +143,11 @@ function WhereProfile(spin, position::SVector{4,T}, emissivity_index, size;
     end 
 
     line_colours = palette(:cool, max(length(energies), 2))
-    clims = (E_min, E_max) # Shared colour scale for the disc and the profile
+    E_clims = (E_min, E_max) 
+    R_clims = (R_min, R_max)
+    # GR only draws contour levels inside the subplot's clims, so map energies into the log r range
+    to_R(E) = R_min + (E - E_min) / (E_max - E_min) * (R_max - R_min)
+    E_img_R = to_R.(E_img)
 
     style = (
         fontfamily = "Computer Modern", 
@@ -164,10 +169,10 @@ function WhereProfile(spin, position::SVector{4,T}, emissivity_index, size;
     dpi = round(Int, 100 * oversample * size / plot_w)
 
     # ---- Disc ----
-    p_disc = heatmap(α, β, E_img;
-        c = :inferno, # TODO: Colourmap of observed energy should be different to that we normally use for redshift; it's confusing.
-        clims = clims,
-        colorbar_title = "Observed energy (keV)",
+    p_disc = heatmap(α, β, R_img;
+        c = :bone, 
+        clims = R_clims,
+        colorbar_title = L"Disc Radius ($\log_{10} r$)", # GR ignores custom colorbar_ticks
         xlabel = L"\alpha", 
         ylabel = L"\beta",
         title = "a = $spin, ϑ = $(ϑ)°, γ = $emissivity_index",
@@ -180,8 +185,8 @@ function WhereProfile(spin, position::SVector{4,T}, emissivity_index, size;
     )
 
     for (i, E) in enumerate(energies)
-        contour!(p_disc, α, β, E_img;
-            levels = [E], 
+        contour!(p_disc, α, β, E_img_R;
+            levels = [to_R(E)],
             c = cgrad([line_colours[i], line_colours[i]]), # No gradient across the line since const
             colorbar_entry = false, 
             linewidth = 1.5, 
@@ -191,7 +196,6 @@ function WhereProfile(spin, position::SVector{4,T}, emissivity_index, size;
     end
 
     
-
     # ---- Line profile ----
     E_prof, F_prof = CalculateLineProfile(spin, position, emissivity_index; resolution = resolution)
     p_prof = plot(E_prof, F_prof;
@@ -215,7 +219,7 @@ function WhereProfile(spin, position::SVector{4,T}, emissivity_index, size;
         vline!(p_prof, [E]; color = line_colours[i], linewidth = 2.0, label = "$E keV")
     end
 
-    name = "WhereProfile_a$(spin)_i$(round(Int, ϑ))_γ$(emissivity_index)"
+    name = "WhereProfile_radius_a$(spin)_i$(round(Int, ϑ))_γ$(emissivity_index)"
     display(p_disc)
     savefig(p_disc, name * "_disc.png")
     display(p_prof)
@@ -227,15 +231,7 @@ x1 = SVector(0.0, 10_000.0, deg2rad(60), 0.0)
 x2 = SVector(0.0, 10000.0, deg2rad(80), 0.0)
 x3 = SVector(0.0, 10000.0, deg2rad(5), 0.0)
 
-WhereProfile(1.968, x2, 3, 1200; resolution = :med, num_energies = 6, αlims = (-5, 5), βlims = (-5, 5))
-WhereProfile(1.968, x1, 3, 1200; resolution = :med, num_energies = 6, αlims = (-5, 5), βlims = (-5, 5))
-WhereProfile(1.968, x3, 3, 1200; resolution = :med, num_energies = 6, αlims = (-5, 5), βlims = (-5, 5))
 
-WhereProfile(1.05, x2, 3, 1200; resolution = :med, num_energies = 6, αlims = (-5, 5), βlims = (-5, 5))
-
-WhereProfile(0.0, x3, 3, 1200; resolution = :med, num_energies = 6, αlims = (-33, 33), βlims = (-22, 22))
-WhereProfile(0.0, x2, 3, 1200; resolution = :med, num_energies = 6, αlims = (-33, 33), βlims = (-22, 22))
-
-WhereProfile(0.998, x1, 4, 1200; resolution = :med, num_energies = 6, αlims = (-5, 5), βlims = (-5, 5))
-WhereProfile(1.05, x1, 4, 1200; resolution = :med, num_energies = 6, αlims = (-5, 5), βlims = (-5, 5))
+WhereProfile(1.05, x1, 4, 1200; resolution = :high, spec_energies = [3.6, 4.6, 5.1, 7.4], αlims = (-3, 3), βlims = (-3, 3))
+WhereProfile(1.05, x2, 3, 1200; resolution = :high, spec_energies = [6.0, 7.0, 7.8, 8.6], αlims = (-4, 4), βlims = (-4, 4))
 
