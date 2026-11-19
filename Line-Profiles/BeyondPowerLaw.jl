@@ -92,6 +92,6 @@ function DoLineProfile(spin, model, angle, resolution)
     # savefig(p, filename)
 end
 
-# model = LampPostModel()
+model = LampPostModel()
 model = RingCorona()
 DoLineProfile(1.998, model , 75.0 , :low)

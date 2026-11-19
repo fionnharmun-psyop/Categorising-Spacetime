@@ -64,7 +64,7 @@ function SampleFluxDots(α, β, flux, radius; n_dots = 60_000, compress = 0.5)
     # Rejection sampling. Slow if compress is near 1, since most pixels get rejected
     while length(dot_α) < n_dots
         index = rand(CartesianIndices(flux))
-        w = weight[index]
+        w = weight[xinde]
         if isfinite(w) && rand() < w
             push!(dot_α, α[index[2]] + (rand() - 0.5) * pixel_w) # jitter inside the pixel so dots don't sit on a lattice
             push!(dot_β, β[index[1]] + (rand() - 0.5) * pixel_h)
